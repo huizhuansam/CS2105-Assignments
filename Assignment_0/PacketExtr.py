@@ -18,7 +18,13 @@ while True:
             break
         num_bytes += digit.decode('ASCII')
 
-    num_bytes = int(num_bytes)
-    data = reader.read1(num_bytes)
-    writer.write(data)
-    writer.flush()
+    num_bytes_to_read = int(num_bytes)
+
+    while num_bytes_to_read > 0:
+        data = reader.read1(num_bytes_to_read)
+        writer.write(data)
+        writer.flush()
+        remaining_bytes_to_read = num_bytes_to_read - len(data)
+        if remaining_bytes_to_read < 1:
+            break
+        num_bytes_to_read = remaining_bytes_to_read
