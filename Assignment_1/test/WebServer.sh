@@ -68,15 +68,14 @@ caseA() {
     cat "$tmpdir/c0-err"
     tput sgr0
     cat "$tmpdir/s-err"
-    continue
   fi
   for j in $( seq 1 $((nreqs-1)) ); do
-		echo 'seq' $j
+    echo 'seq' $j
     clog="$tmpdir/c$j-err"
     rm -f "$clog"
     "$py38" -c "import client" "$port" "$i" "$j" 0 2> "$clog"
     rtn="$?"
-    if ! kill -0 $spid 2>/dev/null || [[ "$rtn" == 1 ]]; then
+    if ! kill -0 $spid 2>/dev/null || [[ "$rtn" -gt 0 ]]; then
       isPassed=0
       kill -9 $spid 2>/dev/null
       tput rev
@@ -84,7 +83,7 @@ caseA() {
       cat "$clog"
       tput sgr0
       cat "$tmpdir/s-err"
-      continue
+      break
     fi
   done
   if [[ "$isPassed" == 1 ]]; then

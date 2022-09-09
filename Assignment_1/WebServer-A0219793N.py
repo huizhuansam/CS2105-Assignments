@@ -132,15 +132,14 @@ def parse_header(connection_socket: socket) -> bytes:
     remaining_whitespace = 2
     header = bytes()
     while remaining_whitespace > 0:
-        try:
-            read_byte = connection_socket.recv(1)
-            if read_byte == b' ':
-                remaining_whitespace -= 1
-            else:
-                remaining_whitespace = 2
-            header += read_byte
-        except timeout:
-            return header
+        read_byte = connection_socket.recv(1)
+        if len(read_byte) < 1:
+            break
+        if read_byte == b' ':
+            remaining_whitespace -= 1
+        else:
+            remaining_whitespace = 2
+        header += read_byte
     return header[:-2]
 
 def parse_header_key_values(header_tokens: List[bytes]) -> Dict[bytes, bytes]:
