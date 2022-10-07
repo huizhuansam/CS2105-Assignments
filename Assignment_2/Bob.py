@@ -8,7 +8,6 @@ import sys
 from socket import *
 from zlib import crc32
 
-
 # Command line parsing
 def get_server_port() -> int:
     parser = argparse.ArgumentParser()
@@ -51,15 +50,24 @@ def is_packet_corrupted(packet: bytes) -> bool:
     payload_checksum = crc32(packet[SEQUENCE_NUMBER_INDEX_BEGIN:])
     return packet_checksum != payload_checksum
 
-def generate_ack_number(packet: bytes) -> int:
-    sequence_number = extract_sequence_number(packet)
-    data = extract_data(packet)
-    return sequence_number + len(data)
-
-def serve(bob_socket: socket) -> None:
+def wait_packet(bob_socket: socket, expected_sequence_number: int) -> int:
     writer = sys.stdout.buffer
+    while True:
+        packet, client_address = bob_socket.recvfrom(MAX_PACKET_BYTES)
+        if is_packet_corrupted(packet) or extract_sequence_number(packet) != expected_sequence_number:
+            bob_socket.sendto(generate_acknowledgement(abs(expected_sequence_number - 1)), client_address)
+            continue
+        data = extract_data(packet)
+        writer.write(data)
+        writer.flush()
+        bob_socket.sendto(generate_acknowledgement(expected_sequence_number), client_address)
+        return abs(expected_sequence_number - 1)
+            
+def serve(bob_socket: socket) -> None:
+    # RDT3.0 Finite state model
     expected_sequence_number = 0
-    # TODO
+    while True:
+        expected_sequence_number = wait_packet(bob_socket, expected_sequence_number)
 
 def run_bob() -> None:
     server_port = get_server_port()
